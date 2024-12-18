@@ -1,9 +1,11 @@
 <script lang="ts">
   import { browser } from "$app/environment";
   import { vim } from "@replit/codemirror-vim";
-  import { gruvboxDark } from "@uiw/codemirror-theme-gruvbox-dark";
+  import { oneDark } from "@codemirror/theme-one-dark";
   import { basicSetup, EditorView } from "codemirror";
   import { onMount } from "svelte";
+  import NoteItem from "$lib/NoteItem.svelte";
+  import OptionsMenu from "$lib/OptionsMenu.svelte";
 
   let selectedNote = $state<string | undefined>(undefined);
   let allNotes = $state<Note[]>([]);
@@ -83,9 +85,10 @@
     // find note and update it
     const note = allNotes.find((note) => note.key == key);
     if (note) {
+      const joinedContent = content.join("\n");
       note.key = newKey;
-      note.content = content.join("\n");
-      note.size = content.length;
+      note.content = joinedContent;
+      note.size = joinedContent.length;
       note.name = potentialTitle;
     }
 
@@ -120,12 +123,31 @@
     }
   };
 
+  let deleteNote = (key: string) => {
+    localStorage.removeItem(key);
+    allNotes = allNotes.filter((note) => note.key !== key);
+    if (selectedNote === key) {
+      if (allNotes.length > 0) {
+        selectNote(allNotes[0].key);
+      } else {
+        selectedNote = undefined;
+        editor?.dispatch({
+          changes: {
+            from: 0,
+            to: editor.state.doc.length,
+            insert: "",
+          },
+        });
+      }
+    }
+  };
+
   onMount(() => {
     editor = new EditorView({
       extensions: [
         basicSetup,
         vim({ status: true }),
-        gruvboxDark,
+        oneDark,
         EditorView.updateListener.of((update) => {
           updateNote(selectedNote, update.state.doc.toJSON());
         }),
@@ -142,41 +164,24 @@
 
 <main>
   <!-- Sidebar -->
-  <div
-    id="sidebar"
-    class="p-1 pr-2 bg-zinc-800 text-zinc-300 flex flex-col"
-  >
-    <div class="sidebar-header text-lg mb-1 flex justify-between">
+  <div id="sidebar" class="p-1 pr-2 bg-zinc-800 text-zinc-300 flex flex-col">
+    <div class="sidebar-header text-lg mb-1 flex justify-between items-center">
       <span>Nuunpad</span>
-      <button class="cursor-pointer hover:bg-zinc-700 px-2" onclick={newNote}
-        >+</button
-      >
+      <div class="flex items-center">
+        <OptionsMenu />
+        <button class="cursor-pointer hover:bg-zinc-700 px-2" onclick={newNote}
+          >+</button
+        >
+      </div>
     </div>
     <div class="overflow-y-scroll">
       {#each allNotes as note}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <div
-          tabindex={note.index}
-          role="menuitem"
-          class="flex justify-between note {selectedNote == note.key
-            ? 'selected'
-            : ''}"
-          onclick={() => {
-            selectNote(note.key);
-          }}
-          onkeypress={(event: KeyboardEvent) => {
-            if (event.key == "Enter") {
-              selectNote(note.key);
-            }
-          }}
-        >
-          <div class="note-name">
-            {note.name}
-          </div>
-          <div>
-            {note.size}
-          </div>
-        </div>
+        <NoteItem
+          {note}
+          isSelected={selectedNote === note.key}
+          onSelect={selectNote}
+          onDelete={deleteNote}
+        />
       {/each}
     </div>
   </div>
@@ -190,7 +195,6 @@
   <div id="status" class="status"></div>
 </main>
 
-<!-- svelte-ignore css_unused_selector -->
 <style>
   main {
     position: absolute;
@@ -206,7 +210,7 @@
 
   #sidebar {
     grid-area: sidebar;
-    background-color: #282828;
+    background-color: #282c34;
     font-family: monospace;
   }
 
@@ -227,25 +231,5 @@
 
   :global(.cm-editor) {
     height: 100%;
-  }
-
-  .note {
-    cursor: pointer;
-  }
-
-  .note-name::before {
-    display: inline-block;
-    width: 12px;
-    content: "  ";
-    opacity: 0.5;
-  }
-
-  .note:hover .note-name::before,
-  .note.selected .note-name::before {
-    content: "> ";
-  }
-
-  .note.selected .note-name::before {
-    opacity: 1;
   }
 </style>
