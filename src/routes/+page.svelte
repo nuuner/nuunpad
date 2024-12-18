@@ -6,6 +6,7 @@
   import { onMount } from "svelte";
   import NoteItem from "$lib/NoteItem.svelte";
   import OptionsMenu from "$lib/OptionsMenu.svelte";
+  import { markdown, markdownKeymap } from "@codemirror/lang-markdown";
 
   let selectedNote = $state<string | undefined>(undefined);
   let allNotes = $state<Note[]>([]);
@@ -151,6 +152,9 @@
         EditorView.updateListener.of((update) => {
           updateNote(selectedNote, update.state.doc.toJSON());
         }),
+        markdown({
+          addKeymap: false,
+        })
       ],
       parent: document.getElementById("codemirror")!,
     });
@@ -164,7 +168,7 @@
 
 <main>
   <!-- Sidebar -->
-  <div id="sidebar" class="p-1 pr-2 bg-zinc-800 text-zinc-300 flex flex-col">
+  <div id="sidebar" class="p-1 bg-zinc-800 text-zinc-300 flex flex-col">
     <div class="sidebar-header text-lg mb-1 flex justify-between items-center">
       <span>Nuunpad</span>
       <div class="flex items-center">
@@ -174,7 +178,7 @@
         >
       </div>
     </div>
-    <div class="overflow-y-scroll">
+    <div class="overflow-y-scroll pr-4">
       {#each allNotes as note}
         <NoteItem
           {note}
