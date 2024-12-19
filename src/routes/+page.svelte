@@ -178,7 +178,7 @@
         >
       </div>
     </div>
-    <div class="overflow-y-scroll pr-4">
+    <div class="overflow-y-auto pr-4">
       {#each allNotes as note}
         <NoteItem
           {note}
