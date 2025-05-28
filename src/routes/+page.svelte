@@ -154,7 +154,8 @@
         }),
         markdown({
           addKeymap: false,
-        })
+        }),
+        EditorView.lineWrapping,
       ],
       parent: document.getElementById("codemirror")!,
     });
